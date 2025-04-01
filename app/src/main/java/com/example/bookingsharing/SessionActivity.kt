@@ -1,8 +1,10 @@
 package com.example.bookingsharing
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -37,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.firebase.database.FirebaseDatabase
 
 class SessionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,7 +144,30 @@ fun SessionActivityScreen() {
         Spacer(modifier = Modifier.height(64.dp))
 
         Button(
-            onClick = { /* Handle login */ },
+            onClick = {
+                when {
+                    studentEmail.isEmpty() -> {
+                            Toast.makeText(context, " Please Enter Mail", Toast.LENGTH_SHORT).show()
+                    }
+
+                    studentPassword.isEmpty() -> {
+                            Toast.makeText(context, " Please Enter Password", Toast.LENGTH_SHORT)
+                                .show()
+                    }
+
+                    else -> {
+                        val readerData = ReaderData(
+                            "",
+                            studentEmail,
+                            "",
+                            studentPassword
+                        )
+
+                        readerLogin(readerData,context)
+                    }
+
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.CenterHorizontally)
@@ -201,4 +227,34 @@ fun SessionActivityScreen() {
 
     }
 
+}
+
+fun readerLogin(readerData: ReaderData, context: Context) {
+
+    val firebaseDatabase = FirebaseDatabase.getInstance()
+    val databaseReference = firebaseDatabase.getReference("BookSharedData").child(readerData.emailid.replace(".", ","))
+
+    databaseReference.get().addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            val rData = task.result?.getValue(ReaderData::class.java)
+            if (rData != null) {
+                if (rData.password == readerData.password) {
+
+                    Toast.makeText(context, "Login Sucessfully", Toast.LENGTH_SHORT).show()
+
+                } else {
+                    Toast.makeText(context, "Seems Incorrect Credentials", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(context, "Your account not found", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(
+                context,
+                "Something went wrong",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+    }
 }

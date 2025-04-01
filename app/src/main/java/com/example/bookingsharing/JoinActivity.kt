@@ -1,9 +1,11 @@
 package com.example.bookingsharing
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.graphics.Paint.Join
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -38,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.firebase.database.FirebaseDatabase
 
 class JoinActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -239,7 +242,35 @@ fun JoinActivityScreen() {
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { /* Handle login */ },
+            onClick = {
+
+                when {
+                    studentEmail.isEmpty() -> {
+                            Toast.makeText(context, " Please Enter Mail", Toast.LENGTH_SHORT).show()
+                    }
+                    studentFullName.isEmpty() -> {
+                            Toast.makeText(context, " Please Enter Name", Toast.LENGTH_SHORT).show()
+                    }
+
+                    studentArea.isEmpty() -> {
+                            Toast.makeText(context, " Please Enter Area", Toast.LENGTH_SHORT).show()
+                    }
+                    studentPassword.isEmpty() -> {
+                            Toast.makeText(context, " Please Enter Password", Toast.LENGTH_SHORT).show()
+                    }
+
+                    else -> {
+                        val readerData = ReaderData(
+                            studentFullName,
+                            studentEmail,
+                            studentArea,
+                            studentPassword
+                        )
+                        readerRegistration(readerData,context);
+                    }
+
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.CenterHorizontally)
@@ -301,3 +332,39 @@ fun JoinActivityScreen() {
 
 }
 
+
+fun readerRegistration(readerData: ReaderData, context: Context) {
+
+    val firebaseDatabase = FirebaseDatabase.getInstance()
+    val databaseReference = firebaseDatabase.getReference("BookSharedData")
+
+    databaseReference.child(readerData.emailid.replace(".", ","))
+        .setValue(readerData)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Toast.makeText(context, "You Registered Successfully", Toast.LENGTH_SHORT)
+                    .show()
+
+            } else {
+                Toast.makeText(
+                    context,
+                    "Registration Failed",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        .addOnFailureListener { _ ->
+            Toast.makeText(
+                context,
+                "Something went wrong",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+}
+
+data class ReaderData(
+    var name : String = "",
+    var emailid : String = "",
+    var area : String = "",
+    var password: String = ""
+)
