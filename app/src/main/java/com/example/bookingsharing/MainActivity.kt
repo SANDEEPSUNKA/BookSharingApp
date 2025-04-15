@@ -1,5 +1,6 @@
 package com.example.bookingsharing
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -55,12 +56,23 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun OnBoardingScreen(onLoginClick: (studentStatus: Int) -> Unit) {
-    val context = LocalContext.current
+    val context = LocalContext.current as Activity
 
     SideEffect {
         CoroutineScope(Dispatchers.Main).launch {
             delay(3000)
             onLoginClick.invoke(2)
+
+            val currentStatus = BookSharingData.readLS(context)
+
+            if(currentStatus)
+            {
+                context.startActivity(Intent(context, BookingSharingHome::class.java))
+                context.finish()
+            }else{
+                context.startActivity(Intent(context, SessionActivity::class.java))
+                context.finish()
+            }
         }
     }
 

@@ -240,6 +240,10 @@ fun readerLogin(readerData: ReaderData, context: Context) {
             if (rData != null) {
                 if (rData.password == readerData.password) {
 
+                    BookSharingData.writeLS(context, true)
+                    BookSharingData.writeMail(context, rData.emailid)
+                    BookSharingData.writeUserName(context, rData.name)
+
                     Toast.makeText(context, "Login Sucessfully", Toast.LENGTH_SHORT).show()
 
                     context.startActivity(Intent(context, BookingSharingHome::class.java))

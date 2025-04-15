@@ -3,6 +3,7 @@ package com.example.bookingsharing
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
@@ -27,7 +28,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-class BookingSharingHome : AppCompatActivity() {
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+class BookingSharingHome : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -118,7 +131,9 @@ fun BookingSharingHomeActivity()
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        BookCardItem()
+        BookListScreen()
+
+//        BookCardItem()
 
     }
 
@@ -219,6 +234,112 @@ fun BookCardItem()
 
 }
 
+@Composable
+fun BookListScreen() {
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+
+    val books = listOf(
+        Book("To Kill a Mockingbird", "Harper Lee", "English"),
+        Book("1984", "George Orwell", "English"),
+        Book("The Alchemist", "Paulo Coelho", "Portuguese"),
+        Book("Pride and Prejudice", "Jane Austen", "English"),
+        Book("Don Quixote", "Miguel de Cervantes", "Spanish"),
+        Book("Les Misérables", "Victor Hugo", "French"),
+        Book("Crime and Punishment", "Fyodor Dostoevsky", "Russian"),
+        Book("One Hundred Years of Solitude", "Gabriel García Márquez", "Spanish"),
+        Book("The Kite Runner", "Khaled Hosseini", "English"),
+        Book("War and Peace", "Leo Tolstoy", "Russian"),
+        Book("The Great Gatsby", "F. Scott Fitzgerald", "English"),
+        Book("The Little Prince", "Antoine de Saint-Exupéry", "French"),
+        Book("A Tale of Two Cities", "Charles Dickens", "English"),
+        Book("The Catcher in the Rye", "J.D. Salinger", "English"),
+        Book("Siddhartha", "Hermann Hesse", "German")
+    )
+
+    val filteredBooks = books.filter {
+        val query = searchQuery.text.trim().lowercase()
+        it.title.lowercase().contains(query) || it.author.lowercase().contains(query)
+    }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            label = { Text("Search by Title or Author") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+
+        LazyColumn {
+            items(filteredBooks) { book ->
+                BookCard(book)
+            }
+        }
+    }
+}
+
+@Composable
+fun BookCard(book: Book) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Image(
+                painter = painterResource(id = book.imageRes),
+                contentDescription = "Book Cover",
+                modifier = Modifier
+                    .size(60.dp)
+                    .padding(end = 12.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = book.title, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = "Author: ${book.author}", fontSize = 14.sp, color = Color.Gray)
+                Text(text = "Language: ${book.language}", fontSize = 13.sp, color = Color.Gray)
+            }
+
+            Text(
+                modifier = Modifier
+                    .clickable {
+                    }
+                    .padding(horizontal = 4.dp)
+                    .background(
+                        color = colorResource(id = R.color.bt_color),
+                        shape = RoundedCornerShape(
+                            10.dp
+                        )
+                    )
+                    .border(
+                        width = 2.dp,
+                        color = colorResource(id = R.color.bt_color),
+                        shape = RoundedCornerShape(
+                            10.dp
+                        )
+                    )
+                    .padding(vertical = 4.dp, horizontal = 4.dp),
+                text = "View",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleSmall.copy(
+                    color = colorResource(id = R.color.white),
+                )
+            )
+        }
+    }
+}
+
+
+data class Book(
+    val title: String,
+    val author: String,
+    val language: String,
+    val imageRes: Int = R.drawable.book_image
+)
 
 @Preview(showBackground = true)
 @Composable
