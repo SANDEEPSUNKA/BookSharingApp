@@ -2,43 +2,45 @@ package com.example.bookingsharing
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class BookingSharingHome : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,8 +52,7 @@ class BookingSharingHome : ComponentActivity() {
 }
 
 @Composable
-fun BookingSharingHomeActivity()
-{
+fun BookingSharingHomeActivity() {
     val context = LocalContext.current as Activity
 
     Column(
@@ -80,8 +81,7 @@ fun BookingSharingHomeActivity()
             Spacer(modifier = Modifier.weight(1f))
 
             Text(
-                modifier = Modifier
-                    ,
+                modifier = Modifier,
                 text = "Home",
                 color = Color.Black,
                 fontSize = 22.sp,
@@ -111,7 +111,7 @@ fun BookingSharingHomeActivity()
                     .clickable {
                         context.startActivity(Intent(context, AddBookActivity::class.java))
                     }
-                    . weight(1f),
+                    .weight(1f),
                 text = "Add New Book",
                 color = Color.Black,
                 fontSize = 18.sp,
@@ -119,8 +119,12 @@ fun BookingSharingHomeActivity()
             )
 
             Text(
-                modifier = Modifier.
-                        weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable {
+                        context.startActivity(Intent(context, ManageBooksActivity::class.java))
+
+                    },
                 text = "Manage Book",
                 color = Color.Black,
                 fontSize = 18.sp,
@@ -140,8 +144,7 @@ fun BookingSharingHomeActivity()
 }
 
 @Composable
-fun BookCardItem()
-{
+fun BookCardItem() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,7 +176,7 @@ fun BookCardItem()
             )
             Spacer(modifier = Modifier.width(8.dp))
 
-            Column (
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
             )
@@ -238,27 +241,21 @@ fun BookCardItem()
 fun BookListScreen() {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
-    val books = listOf(
-        Book("To Kill a Mockingbird", "Harper Lee", "English"),
-        Book("1984", "George Orwell", "English"),
-        Book("The Alchemist", "Paulo Coelho", "Portuguese"),
-        Book("Pride and Prejudice", "Jane Austen", "English"),
-        Book("Don Quixote", "Miguel de Cervantes", "Spanish"),
-        Book("Les Misérables", "Victor Hugo", "French"),
-        Book("Crime and Punishment", "Fyodor Dostoevsky", "Russian"),
-        Book("One Hundred Years of Solitude", "Gabriel García Márquez", "Spanish"),
-        Book("The Kite Runner", "Khaled Hosseini", "English"),
-        Book("War and Peace", "Leo Tolstoy", "Russian"),
-        Book("The Great Gatsby", "F. Scott Fitzgerald", "English"),
-        Book("The Little Prince", "Antoine de Saint-Exupéry", "French"),
-        Book("A Tale of Two Cities", "Charles Dickens", "English"),
-        Book("The Catcher in the Rye", "J.D. Salinger", "English"),
-        Book("Siddhartha", "Hermann Hesse", "German")
-    )
+    val context = LocalContext.current as Activity
+    val userEmail = BookSharingData.readMail(context)
+    var booksList by remember { mutableStateOf(listOf<BookData>()) }
+    var booksLoading by remember { mutableStateOf(true) }
 
-    val filteredBooks = books.filter {
+    LaunchedEffect(userEmail) {
+        getBooks() { orders ->
+            booksList = orders
+            booksLoading = false
+        }
+    }
+
+    val filteredBooks = booksList.filter {
         val query = searchQuery.text.trim().lowercase()
-        it.title.lowercase().contains(query) || it.author.lowercase().contains(query)
+        it.bookName.lowercase().contains(query) || it.author.lowercase().contains(query)
     }
 
     Column(modifier = Modifier.padding(16.dp)) {
@@ -273,14 +270,15 @@ fun BookListScreen() {
 
         LazyColumn {
             items(filteredBooks) { book ->
-                BookCard(book)
+                if (book.isAvailable == "Available")
+                    BookCard(book)
             }
         }
     }
 }
 
 @Composable
-fun BookCard(book: Book) {
+fun BookCard(book: BookData) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -292,14 +290,24 @@ fun BookCard(book: Book) {
             modifier = Modifier.padding(12.dp)
         ) {
             Image(
-                painter = painterResource(id = book.imageRes),
-                contentDescription = "Book Cover",
+                bitmap = decodeBase64ToBitmap(book.bookImage)!!.asImageBitmap(),
+                contentDescription = "Book Image",
                 modifier = Modifier
-                    .size(60.dp)
-                    .padding(end = 12.dp)
+                    .width(100.dp)
+                    .height(150.dp)
+                    .padding(end = 8.dp)
+                    .clip(RectangleShape)
+                    .border(2.dp, Color.Black, RectangleShape),
+                contentScale = ContentScale.Crop
             )
+
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = book.title, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = book.bookName,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(text = "Author: ${book.author}", fontSize = 14.sp, color = Color.Gray)
                 Text(text = "Language: ${book.language}", fontSize = 13.sp, color = Color.Gray)
             }
@@ -334,15 +342,39 @@ fun BookCard(book: Book) {
 }
 
 
-data class Book(
-    val title: String,
-    val author: String,
-    val language: String,
-    val imageRes: Int = R.drawable.book_image
-)
+fun getBooks(callback: (List<BookData>) -> Unit) {
+    val databaseReference = FirebaseDatabase.getInstance().getReference("SharedBooks")
+
+    databaseReference.addListenerForSingleValueEvent(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            val donationsList = mutableListOf<BookData>()
+
+            for (donorSnapshot in snapshot.children) { // Iterate through email keys
+                for (donationSnapshot in donorSnapshot.children) { // Iterate through donation entries
+                    val donation = donationSnapshot.getValue(BookData::class.java)
+                    donation?.let { donationsList.add(it) }
+                }
+            }
+
+            callback(donationsList)
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            println("Error: ${error.message}")
+            callback(emptyList())
+        }
+    })
+}
 
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
     BookingSharingHomeActivity()
+}
+
+
+fun decodeBase64ToBitmap(base64String: String): Bitmap? {
+    val decodedString = Base64.decode(base64String, Base64.DEFAULT)
+    val originalBitmap = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
+    return originalBitmap
 }

@@ -1,24 +1,20 @@
 package com.example.bookingsharing
 
-import android.Manifest
 import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -48,49 +44,45 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import coil.compose.rememberAsyncImagePainter
-import com.google.android.gms.maps.model.LatLng
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.database.FirebaseDatabase
 import java.io.ByteArrayOutputStream
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-class AddBookActivity : ComponentActivity() {
+class UpdateBookActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AddBook()
+            UpdateBook()
         }
+
     }
 }
 
+object UpdateSelectionBook{
+ var updationBook = BookData ()
+}
 
 @Composable
-fun AddBook() {
-    var bookTitle by remember { mutableStateOf("") }
-    var bookAuthors by remember { mutableStateOf("") }
-    var bookCategory by remember { mutableStateOf("") }
-    var bookLanguage by remember { mutableStateOf("") }
-    var bookPublisher by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+fun UpdateBook() {
+    var bookTitle by remember { mutableStateOf(UpdateSelectionBook.updationBook.bookName) }
+    var bookAuthors by remember { mutableStateOf(UpdateSelectionBook.updationBook.author) }
+    var bookCategory by remember { mutableStateOf(UpdateSelectionBook.updationBook.genre) }
+    var bookLanguage by remember { mutableStateOf(UpdateSelectionBook.updationBook.language) }
+    var bookPublisher by remember { mutableStateOf(UpdateSelectionBook.updationBook.publisher) }
+    var location by remember { mutableStateOf(UpdateSelectionBook.updationBook.lat) }
 
-    var ownerName by remember { mutableStateOf("") }
-    var ownerContact by remember { mutableStateOf("") }
+    var ownerName by remember { mutableStateOf(UpdateSelectionBook.updationBook.ownerName) }
+    var ownerContact by remember { mutableStateOf(UpdateSelectionBook.updationBook.ownerContact) }
 
-    var selectedOption by remember { mutableStateOf<String?>(null) }
+    var selectedOption by remember { mutableStateOf<String?>(UpdateSelectionBook.updationBook.condition) }
 
-    var isAvailable by remember { mutableStateOf<String?>(null) }
+    var isAvailable by remember { mutableStateOf<String?>(UpdateSelectionBook.updationBook.isAvailable) }
 
     val context = LocalContext.current
 
@@ -125,7 +117,7 @@ fun AddBook() {
             Text(
                 modifier = Modifier
                     .padding(12.dp),
-                text = "Add Book",
+                text = "Update Book",
                 color = Color.Black,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
@@ -135,8 +127,6 @@ fun AddBook() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        UploadDonorImage()
-        Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
             modifier = Modifier
@@ -394,35 +384,22 @@ fun AddBook() {
                             .show()
                     } else {
 
-                        val bookData = BookData(
-                            bookName = bookTitle,
-                            author = bookAuthors,
-                            genre = bookCategory,
-                            language = bookLanguage,
-                            publisher = bookPublisher,
-                            lat = "908.78",
-                            lng = "673.38",
-                            condition = selectedOption!!,
-                            isAvailable = isAvailable!!,
-                            ownerName = ownerName,
-                            ownerContact = ownerContact
 
+                        val updatedBook = mapOf(
+                            "bookName" to bookTitle,
+                            "author" to bookAuthors,
+                            "genre" to bookCategory,
+                            "language" to bookLanguage,
+                            "publisher" to bookPublisher,
+                            "lat" to "908.78",
+                            "lng" to "673.38",
+                            "condition" to selectedOption!!,
+                            "isAvailable" to isAvailable!!,
+                            "ownerName" to ownerName,
+                            "ownerContact" to ownerContact,
                         )
+                        updateBook(UpdateSelectionBook.updationBook.bookId, updatedBook, context)
 
-                        val inputStream =
-                            context.contentResolver.openInputStream(DonorPhoto.selImageUri)
-                        val bitmap = BitmapFactory.decodeStream(inputStream)
-                        val outputStream = ByteArrayOutputStream()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-                        val base64Image =
-                            Base64.encodeToString(
-                                outputStream.toByteArray(),
-                                Base64.DEFAULT
-                            )
-
-                        bookData.bookImage = base64Image
-
-                        uploadBookData(bookData, context)
 
                     }
                 }
@@ -443,7 +420,7 @@ fun AddBook() {
                 )
                 .padding(vertical = 12.dp, horizontal = 12.dp)
                 .align(Alignment.CenterHorizontally),
-            text = "Submit",
+            text = "Update",
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleMedium.copy(
                 color = colorResource(id = R.color.white),
@@ -454,228 +431,30 @@ fun AddBook() {
     }
 }
 
+fun updateBook(donorId: String, updatedData: Map<String, Any>, context: Context) {
 
-@Composable
-fun AddBook1() {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Condition Selector?",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "New",
-                    onClick = { selectedOption = "New" }
-                )
-                Text("New", modifier = Modifier.clickable { selectedOption = "New" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "LikeNew",
-                    onClick = { selectedOption = "LikeNew" }
-                )
-                Text("LikeNew", modifier = Modifier.clickable { selectedOption = "LikeNew" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Good",
-                    onClick = { selectedOption = "Good" }
-                )
-                Text("Good", modifier = Modifier.clickable { selectedOption = "Good" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Worn",
-                    onClick = { selectedOption = "Worn" }
-                )
-                Text("Worn", modifier = Modifier.clickable { selectedOption = "Worn" })
-            }
-        }
-    }
-}
-
-
-@Composable
-fun AddBook2() {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Availability? ",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Available",
-                    onClick = { selectedOption = "Available" }
-                )
-                Text("Available", modifier = Modifier.clickable { selectedOption = "Available" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Not Available",
-                    onClick = { selectedOption = "Not Available" }
-                )
-                Text(
-                    "Not Available",
-                    modifier = Modifier.clickable { selectedOption = "Not Available" })
-            }
-        }
-    }
-}
-
-data class BookData(
-    var bookName: String = "",
-    var author: String = "",
-    var genre: String = "",
-    var language: String = "",
-    var publisher: String = "",
-    var lat: String = "",
-    var lng:String = "",
-    var condition: String = "",
-    var isAvailable: String = "",
-    var bookId: String = "",
-    var ownerName: String = "",
-    var ownerContact: String = "",
-    var bookImage: String = ""
-)
-
-
-private fun uploadBookData(bookData: BookData, activityContext: Context) {
-
-    val userEmail = BookSharingData.readMail(activityContext)
-    val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-    val orderId = dateFormat.format(Date())
-    bookData.bookId = orderId
-
-    FirebaseDatabase.getInstance().getReference("SharedBooks")
-        .child(userEmail.replace(".", ",")).child(orderId).setValue(bookData)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                Toast.makeText(activityContext, "Donor Registered Successfully", Toast.LENGTH_SHORT)
-                    .show()
-                (activityContext as Activity).finish()
-            } else {
+    try {
+        val emailKey = BookSharingData.readMail(context)
+            .replace(".", ",")
+        val path = "SharedBooks/$emailKey/$donorId"
+        FirebaseDatabase.getInstance().getReference(path).updateChildren(updatedData)
+            .addOnSuccessListener {
                 Toast.makeText(
-                    activityContext,
-                    "Donor Registration Failed: ${task.exception?.message}",
+                    context,
+                    "Details Updated Successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                (context as Activity).finish()
+            }
+            .addOnFailureListener {
+                Toast.makeText(
+                    context,
+                    "Failed to update",
                     Toast.LENGTH_SHORT
                 ).show()
             }
-        }
-        .addOnFailureListener { exception ->
-            Toast.makeText(
-                activityContext,
-                "Donor Registration Failed: ${exception.message}",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-}
-
-
-@Preview(showBackground = true)
-@Composable
-fun AddBookPreview() {
-    AddBook()
-}
-
-@Composable
-fun UploadDonorImage() {
-    val activityContext = LocalContext.current
-
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-
-    val captureImageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-        onResult = { success ->
-            if (success) {
-                imageUri = getImageUri(activityContext)
-                DonorPhoto.selImageUri = imageUri as Uri
-                DonorPhoto.isImageSelected = true
-            } else {
-                DonorPhoto.isImageSelected = false
-                Toast.makeText(activityContext, "Capture Failed", Toast.LENGTH_SHORT).show()
-            }
-        }
-    )
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-        onResult = { isGranted ->
-            if (isGranted) {
-                Toast.makeText(activityContext, "Permission Granted", Toast.LENGTH_SHORT).show()
-                captureImageLauncher.launch(getImageUri(activityContext)) // Launch the camera
-            } else {
-                Toast.makeText(activityContext, "Permission Denied", Toast.LENGTH_SHORT).show()
-            }
-        }
-    )
-
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = if (imageUri != null) {
-                rememberAsyncImagePainter(model = imageUri)
-            } else {
-                painterResource(id = R.drawable.ic_add_image)
-            },
-            contentDescription = "Captured Image",
-            modifier = Modifier
-                .width(100.dp)
-                .height(100.dp)
-                .clickable {
-                    if (ContextCompat.checkSelfPermission(
-                            activityContext,
-                            Manifest.permission.CAMERA
-                        ) == PackageManager.PERMISSION_GRANTED
-                    ) {
-                        captureImageLauncher.launch(getImageUri(activityContext))
-                    } else {
-                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                    }
-                }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        if (imageUri == null) {
-            Text(text = "Tap the image to capture")
-        }
+    } catch (e: Exception) {
+        Log.e("Test", "Error Message : ${e.message}")
     }
-}
-
-fun getImageUri(activityContext: Context): Uri {
-    val file = File(activityContext.filesDir, "captured_image.jpg")
-    return FileProvider.getUriForFile(
-        activityContext,
-        "${activityContext.packageName}.fileprovider",
-        file
-    )
-}
-
-
-object DonorPhoto {
-    lateinit var selImageUri: Uri
-    var isImageSelected = false
 }
