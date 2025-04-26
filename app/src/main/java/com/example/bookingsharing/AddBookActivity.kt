@@ -3,9 +3,11 @@ package com.example.bookingsharing
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -40,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -83,7 +87,7 @@ fun AddBook() {
     var bookCategory by remember { mutableStateOf("") }
     var bookLanguage by remember { mutableStateOf("") }
     var bookPublisher by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+//    var location by remember { mutableStateOf("") }
 
     var ownerName by remember { mutableStateOf("") }
     var ownerContact by remember { mutableStateOf("") }
@@ -92,8 +96,30 @@ fun AddBook() {
 
     var isAvailable by remember { mutableStateOf<String?>(null) }
 
-    val context = LocalContext.current
+    val context = LocalContext.current as Activity
 
+    var locationText by remember { mutableStateOf("Select PickUp Location...") }
+
+    var locLat by remember { mutableDoubleStateOf(0.0) }
+    var locLng by remember { mutableDoubleStateOf(0.0) }
+
+
+    var isPuckUpSelected by remember { mutableStateOf(false) }
+
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val lat = data?.getDoubleExtra("LAT", 0.0) ?: 0.0
+            val lng = data?.getDoubleExtra("LNG", 0.0) ?: 0.0
+            locLat = lat
+            locLng = lng
+            locationText = "Lat: $lat, Lng: $lng"
+            isPuckUpSelected = true
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -108,7 +134,7 @@ fun AddBook() {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = colorResource(id = R.color.white)
+                    color = colorResource(id = R.color.bt_color)
                 )
                 .padding(horizontal = 12.dp),
 
@@ -117,6 +143,10 @@ fun AddBook() {
             ) {
 
             Icon(
+                modifier = Modifier
+                    .clickable {
+                        context.finish()
+                    },
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Select Contact",
                 tint = Color.Black
@@ -135,7 +165,7 @@ fun AddBook() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        UploadDonorImage()
+        UploadBookImage()
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -243,25 +273,67 @@ fun AddBook() {
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        OutlinedTextField(
+
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = colorResource(R.color.white),
-                focusedContainerColor = colorResource(R.color.white),
-                unfocusedTextColor = Color.Black,
-                focusedTextColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color.Black
-            ),
-            value = location,
-            onValueChange = { location = it },
-            label = { Text("Location") },
-            textStyle = TextStyle(color = colorResource(id = R.color.black)),
+                .padding(horizontal = 12.dp)
+                .background(
+                    color = Color.LightGray,
+                    shape = RoundedCornerShape(
+                        3.dp
+                    )
+                )
+                .border(
+                    width = 1.dp,
+                    color = Color.Gray,
+                    shape = RoundedCornerShape(3.dp)
+                )
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        )
+        {
+            if (isPuckUpSelected) {
+                val address = getAddressFromLatLng(context, LatLng(locLat, locLng))
+                Text(modifier = Modifier.weight(1f), text = address, maxLines = 2)
+            } else {
+                Text(text = locationText)
+            }
 
+            Spacer(modifier = Modifier.weight(1f))
+
+            Text(
+                text = "Select",
+                color = Color.White,
+                modifier = Modifier
+                    .wrapContentHeight()
+                    .clickable {
+//                        context.startActivity(Intent(context, PickupLocationActivity::class.java))
+
+                        isPuckUpSelected = false
+                        val intent = Intent(context, PickupLocationActivity::class.java)
+                        launcher.launch(intent)
+                    }
+                    .background(
+                        color = colorResource(id = R.color.black),
+                        shape = RoundedCornerShape(
+                            6.dp
+                        )
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = colorResource(id = R.color.black),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+                    .padding(
+                        horizontal = 12.dp,
+                        vertical = 4.dp
+                    )
             )
+        }
+
         Spacer(modifier = Modifier.height(6.dp))
+
 
 
         OutlinedTextField(
@@ -376,7 +448,7 @@ fun AddBook() {
                     )
                     Text(
                         "Not Available",
-                        modifier = Modifier.clickable { selectedOption = "Not Available" })
+                        modifier = Modifier.clickable { isAvailable = "Not Available" })
                 }
             }
         }
@@ -400,8 +472,8 @@ fun AddBook() {
                             genre = bookCategory,
                             language = bookLanguage,
                             publisher = bookPublisher,
-                            lat = "908.78",
-                            lng = "673.38",
+                            lat = locLat.toString(),
+                            lng = locLng.toString(),
                             condition = selectedOption!!,
                             isAvailable = isAvailable!!,
                             ownerName = ownerName,
@@ -410,7 +482,7 @@ fun AddBook() {
                         )
 
                         val inputStream =
-                            context.contentResolver.openInputStream(DonorPhoto.selImageUri)
+                            context.contentResolver.openInputStream(BookImage.selImageUri)
                         val bitmap = BitmapFactory.decodeStream(inputStream)
                         val outputStream = ByteArrayOutputStream()
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
@@ -446,103 +518,16 @@ fun AddBook() {
             text = "Submit",
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleMedium.copy(
-                color = colorResource(id = R.color.white),
+                color = colorResource(id = R.color.black),
             )
         )
 
+        Spacer(modifier = Modifier.height(12.dp))
+
 
     }
 }
 
-
-@Composable
-fun AddBook1() {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Condition Selector?",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "New",
-                    onClick = { selectedOption = "New" }
-                )
-                Text("New", modifier = Modifier.clickable { selectedOption = "New" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "LikeNew",
-                    onClick = { selectedOption = "LikeNew" }
-                )
-                Text("LikeNew", modifier = Modifier.clickable { selectedOption = "LikeNew" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Good",
-                    onClick = { selectedOption = "Good" }
-                )
-                Text("Good", modifier = Modifier.clickable { selectedOption = "Good" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Worn",
-                    onClick = { selectedOption = "Worn" }
-                )
-                Text("Worn", modifier = Modifier.clickable { selectedOption = "Worn" })
-            }
-        }
-    }
-}
-
-
-@Composable
-fun AddBook2() {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Availability? ",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Available",
-                    onClick = { selectedOption = "Available" }
-                )
-                Text("Available", modifier = Modifier.clickable { selectedOption = "Available" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Not Available",
-                    onClick = { selectedOption = "Not Available" }
-                )
-                Text(
-                    "Not Available",
-                    modifier = Modifier.clickable { selectedOption = "Not Available" })
-            }
-        }
-    }
-}
 
 data class BookData(
     var bookName: String = "",
@@ -551,7 +536,7 @@ data class BookData(
     var language: String = "",
     var publisher: String = "",
     var lat: String = "",
-    var lng:String = "",
+    var lng: String = "",
     var condition: String = "",
     var isAvailable: String = "",
     var bookId: String = "",
@@ -563,22 +548,22 @@ data class BookData(
 
 private fun uploadBookData(bookData: BookData, activityContext: Context) {
 
-    val userEmail = BookSharingData.readMail(activityContext)
+    val bookHolderEmail = BookSharingData.getBookHolderMail(activityContext)
     val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
     val orderId = dateFormat.format(Date())
     bookData.bookId = orderId
 
     FirebaseDatabase.getInstance().getReference("SharedBooks")
-        .child(userEmail.replace(".", ",")).child(orderId).setValue(bookData)
+        .child(bookHolderEmail.replace(".", ",")).child(orderId).setValue(bookData)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                Toast.makeText(activityContext, "Donor Registered Successfully", Toast.LENGTH_SHORT)
+                Toast.makeText(activityContext, "Book Added Successfully", Toast.LENGTH_SHORT)
                     .show()
                 (activityContext as Activity).finish()
             } else {
                 Toast.makeText(
                     activityContext,
-                    "Donor Registration Failed: ${task.exception?.message}",
+                    "Failed: ${task.exception?.message}",
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -586,7 +571,7 @@ private fun uploadBookData(bookData: BookData, activityContext: Context) {
         .addOnFailureListener { exception ->
             Toast.makeText(
                 activityContext,
-                "Donor Registration Failed: ${exception.message}",
+                "Failed: ${exception.message}",
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -600,7 +585,7 @@ fun AddBookPreview() {
 }
 
 @Composable
-fun UploadDonorImage() {
+fun UploadBookImage() {
     val activityContext = LocalContext.current
 
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -610,10 +595,10 @@ fun UploadDonorImage() {
         onResult = { success ->
             if (success) {
                 imageUri = getImageUri(activityContext)
-                DonorPhoto.selImageUri = imageUri as Uri
-                DonorPhoto.isImageSelected = true
+                BookImage.selImageUri = imageUri as Uri
+                BookImage.isImageSelected = true
             } else {
-                DonorPhoto.isImageSelected = false
+                BookImage.isImageSelected = false
                 Toast.makeText(activityContext, "Capture Failed", Toast.LENGTH_SHORT).show()
             }
         }
@@ -640,7 +625,7 @@ fun UploadDonorImage() {
             painter = if (imageUri != null) {
                 rememberAsyncImagePainter(model = imageUri)
             } else {
-                painterResource(id = R.drawable.ic_add_image)
+                painterResource(id = R.drawable.add_book_img)
             },
             contentDescription = "Captured Image",
             modifier = Modifier
@@ -660,7 +645,7 @@ fun UploadDonorImage() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         if (imageUri == null) {
-            Text(text = "Tap the image to capture")
+            Text(text = "Capture Book Image")
         }
     }
 }
@@ -674,8 +659,17 @@ fun getImageUri(activityContext: Context): Uri {
     )
 }
 
+fun getAddressFromLatLng(context: Context, latLng: LatLng): String {
+    return try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+        addresses?.get(0)?.getAddressLine(0) ?: "Unknown Location"
+    } catch (e: Exception) {
+        "Unknown Location"
+    }
+}
 
-object DonorPhoto {
+object BookImage {
     lateinit var selImageUri: Uri
     var isImageSelected = false
 }

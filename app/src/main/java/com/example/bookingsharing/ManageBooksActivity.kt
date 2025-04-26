@@ -12,6 +12,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,12 +69,12 @@ fun ManageBookListScreen() {
     val searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
     val context = LocalContext.current as Activity
-    val userEmail = BookSharingData.readMail(context)
+    val bookHolderEmail = BookSharingData.getBookHolderMail(context)
     var booksList by remember { mutableStateOf(listOf<BookData>()) }
     var booksLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(userEmail) {
-        ManageGetBooks(userEmail) { orders ->
+    LaunchedEffect(bookHolderEmail) {
+        ManageGetBooks(bookHolderEmail) { orders ->
             booksList = orders
             booksLoading = false
         }
@@ -89,7 +91,7 @@ fun ManageBookListScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = colorResource(id = R.color.white)
+                    color = colorResource(id = R.color.bt_color)
                 )
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -97,6 +99,10 @@ fun ManageBookListScreen() {
             ) {
 
             Icon(
+                modifier = Modifier
+                    .clickable {
+                        context.finish()
+                    },
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Select Contact",
                 tint = Color.Black
@@ -129,9 +135,22 @@ fun ManageBookListScreen() {
 //                    .padding(bottom = 16.dp)
 //            )
 
-            LazyColumn {
-                items(filteredBooks) { book ->
-                    MangeBookCard(book)
+            if (booksLoading) {
+                LinearProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                if (filteredBooks.isNotEmpty()) {
+                    LazyColumn {
+                        items(filteredBooks) { book ->
+                            MangeBookCard(book)
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "No Books Found",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = 18.sp
+                    )
                 }
             }
         }
@@ -147,7 +166,8 @@ fun MangeBookCard(book: BookData) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -157,8 +177,8 @@ fun MangeBookCard(book: BookData) {
                 bitmap = decodeBase64ToBitmap(book.bookImage)!!.asImageBitmap(),
                 contentDescription = "Book Image",
                 modifier = Modifier
-                    .width(100.dp)
-                    .height(150.dp)
+                    .width(70.dp)
+                    .height(90.dp)
                     .padding(end = 8.dp)
                     .clip(RectangleShape)
                     .border(2.dp, Color.Black, RectangleShape),
@@ -170,39 +190,89 @@ fun MangeBookCard(book: BookData) {
                     text = book.bookName,
                     fontSize = 16.sp,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
                 )
-                Text(text = "Author: ${book.author}", fontSize = 14.sp, color = Color.Gray)
-                Text(text = "Language: ${book.language}", fontSize = 13.sp, color = Color.Gray)
+
+                Row {
+                    Text(
+                        text = "Author :",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = book.author,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Row {
+                    Text(
+                        text = "Language :",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = book.language,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Row {
+                    Text(
+                        text = "Category :",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = book.genre,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    modifier = Modifier
+                        .align(alignment = Alignment.End)
+                        .clickable {
+                            UpdateSelectionBook.updationBook = book
+                            context.startActivity(Intent(context, UpdateBookActivity::class.java))
+                        }
+                        .padding(horizontal = 4.dp)
+                        .background(
+                            color = colorResource(id = R.color.bt_color),
+                            shape = RoundedCornerShape(
+                                10.dp
+                            )
+                        )
+                        .border(
+                            width = 2.dp,
+                            color = colorResource(id = R.color.bt_color),
+                            shape = RoundedCornerShape(
+                                10.dp
+                            )
+                        )
+                        .padding(vertical = 6.dp, horizontal = 10.dp),
+                    text = "Update",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        color = colorResource(id = R.color.black),
+                    )
+                )
             }
 
-            Text(
-                modifier = Modifier
-                    .clickable {
-                        UpdateSelectionBook.updationBook = book
-                        context.startActivity(Intent(context, UpdateBookActivity::class.java))
-                    }
-                    .padding(horizontal = 4.dp)
-                    .background(
-                        color = colorResource(id = R.color.bt_color),
-                        shape = RoundedCornerShape(
-                            10.dp
-                        )
-                    )
-                    .border(
-                        width = 2.dp,
-                        color = colorResource(id = R.color.bt_color),
-                        shape = RoundedCornerShape(
-                            10.dp
-                        )
-                    )
-                    .padding(vertical = 4.dp, horizontal = 4.dp),
-                text = "Update",
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    color = colorResource(id = R.color.white),
-                )
-            )
         }
     }
 }

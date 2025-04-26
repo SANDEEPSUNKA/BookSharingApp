@@ -4,37 +4,37 @@ import android.content.Context
 
 object BookSharingData {
 
-    fun writeLS(context: Context, value: Boolean) {
-        val userLogin = context.getSharedPreferences("USER_DETAILS", Context.MODE_PRIVATE)
+    fun saveBookHolderStatus(context: Context, value: Boolean) {
+        val userLogin = context.getSharedPreferences("BOOK_HOLDER_DATA", Context.MODE_PRIVATE)
         val editor = userLogin.edit()
-        editor.putBoolean("LOGIN_STATUS", value).apply()
+        editor.putBoolean("BH_STATUS", value).apply()
     }
 
-    fun readLS(context: Context): Boolean {
-        val userLogin = context.getSharedPreferences("USER_DETAILS", Context.MODE_PRIVATE)
-        return userLogin.getBoolean("LOGIN_STATUS", false)
+    fun getBookHolderStatus(context: Context): Boolean {
+        val userLogin = context.getSharedPreferences("BOOK_HOLDER_DATA", Context.MODE_PRIVATE)
+        return userLogin.getBoolean("BH_STATUS", false)
     }
 
-    fun writeUserName(context: Context, value: String) {
-        val userLogin = context.getSharedPreferences("USER_DETAILS", Context.MODE_PRIVATE)
+    fun saveBookHolderName(context: Context, value: String) {
+        val userLogin = context.getSharedPreferences("BOOK_HOLDER_DATA", Context.MODE_PRIVATE)
         val editor = userLogin.edit()
-        editor.putString("USERNAME", value).apply()
+        editor.putString("BH_NAME", value).apply()
     }
 
-    fun readUserName(context: Context): String {
-        val userLogin = context.getSharedPreferences("USER_DETAILS", Context.MODE_PRIVATE)
-        return userLogin.getString("USERNAME", "")!!
+    fun getBookHolderName(context: Context): String {
+        val userLogin = context.getSharedPreferences("BOOK_HOLDER_DATA", Context.MODE_PRIVATE)
+        return userLogin.getString("BH_NAME", "")!!
     }
 
-    fun writeMail(context: Context, value: String) {
-        val userLogin = context.getSharedPreferences("USER_DETAILS", Context.MODE_PRIVATE)
+    fun saveBookHolderMail(context: Context, value: String) {
+        val userLogin = context.getSharedPreferences("BOOK_HOLDER_DATA", Context.MODE_PRIVATE)
         val editor = userLogin.edit()
-        editor.putString("USERMAIL", value).apply()
+        editor.putString("BH_MAIL", value).apply()
     }
 
-    fun readMail(context: Context): String {
-        val userLogin = context.getSharedPreferences("USER_DETAILS", Context.MODE_PRIVATE)
-        return userLogin.getString("USERMAIL", "")!!
+    fun getBookHolderMail(context: Context): String {
+        val userLogin = context.getSharedPreferences("BOOK_HOLDER_DATA", Context.MODE_PRIVATE)
+        return userLogin.getString("BH_MAIL", "")!!
     }
 
 

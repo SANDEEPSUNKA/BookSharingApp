@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.database.FirebaseDatabase
+import kotlin.jvm.java
 
 class JoinActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,11 +56,11 @@ class JoinActivity : ComponentActivity() {
 
 @Composable
 fun JoinActivityScreen() {
-    var studentEmail by remember { mutableStateOf("") }
-    var studentFullName by remember { mutableStateOf("") }
-    var studentArea by remember { mutableStateOf("") }
-    var studentPassword by remember { mutableStateOf("") }
-    var sConfirmPassword by remember { mutableStateOf("") }
+    var bookHolderEmail by remember { mutableStateOf("") }
+    var bookHolderName by remember { mutableStateOf("") }
+    var bookHolderArea by remember { mutableStateOf("") }
+    var bookHolderPassword by remember { mutableStateOf("") }
+    var bookHolderConfirmPassword by remember { mutableStateOf("") }
 
 
     val context = LocalContext.current as Activity
@@ -65,7 +68,9 @@ fun JoinActivityScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = colorResource(id = R.color.evergreen))
+            .background(color = colorResource(id = R.color.bg))
+            .verticalScroll(rememberScrollState())
+
     ) {
         Spacer(modifier = Modifier.height(46.dp))
 
@@ -73,14 +78,14 @@ fun JoinActivityScreen() {
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Create Account,",
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            color = Color.White
+            color = Color.Black
         )
 
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "to get started now!",
             style = MaterialTheme.typography.titleLarge,
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -88,7 +93,7 @@ fun JoinActivityScreen() {
         Text(
             modifier = Modifier.padding(start = 12.dp),
             text = "Enter Email Address",
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(
@@ -101,16 +106,16 @@ fun JoinActivityScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            value = studentEmail,
-            onValueChange = { studentEmail = it },
+            value = bookHolderEmail,
+            onValueChange = { bookHolderEmail = it },
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedContainerColor = colorResource(id = R.color.evergreen),
-                unfocusedIndicatorColor = Color.White,
-                focusedContainerColor = colorResource(id = R.color.evergreen),
-                focusedIndicatorColor = Color.White
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                unfocusedContainerColor = colorResource(id = R.color.white),
+                unfocusedIndicatorColor = Color.Black,
+                focusedContainerColor = colorResource(id = R.color.white),
+                focusedIndicatorColor = Color.Black
             )
         )
 
@@ -119,7 +124,7 @@ fun JoinActivityScreen() {
         Text(
             modifier = Modifier.padding(start = 12.dp),
             text = "Enter FullName",
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(
@@ -132,16 +137,16 @@ fun JoinActivityScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            value = studentFullName,
-            onValueChange = { studentFullName = it },
+            value = bookHolderName,
+            onValueChange = { bookHolderName = it },
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedContainerColor = colorResource(id = R.color.evergreen),
-                unfocusedIndicatorColor = Color.White,
-                focusedContainerColor = colorResource(id = R.color.evergreen),
-                focusedIndicatorColor = Color.White
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                unfocusedContainerColor = colorResource(id = R.color.white),
+                unfocusedIndicatorColor = Color.Black,
+                focusedContainerColor = colorResource(id = R.color.white),
+                focusedIndicatorColor = Color.Black
             )
         )
 
@@ -150,7 +155,7 @@ fun JoinActivityScreen() {
         Text(
             modifier = Modifier.padding(start = 12.dp),
             text = "Enter Your Area",
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(
@@ -163,16 +168,16 @@ fun JoinActivityScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            value = studentArea,
-            onValueChange = { studentArea = it },
+            value = bookHolderArea,
+            onValueChange = { bookHolderArea = it },
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedContainerColor = colorResource(id = R.color.evergreen),
-                unfocusedIndicatorColor = Color.White,
-                focusedContainerColor = colorResource(id = R.color.evergreen),
-                focusedIndicatorColor = Color.White
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                unfocusedContainerColor = colorResource(id = R.color.white),
+                unfocusedIndicatorColor = Color.Black,
+                focusedContainerColor = colorResource(id = R.color.white),
+                focusedIndicatorColor = Color.Black
             )
         )
 
@@ -181,7 +186,7 @@ fun JoinActivityScreen() {
         Text(
             modifier = Modifier.padding(start = 12.dp),
             text = "Enter Password",
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(
@@ -194,16 +199,16 @@ fun JoinActivityScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            value = studentPassword,
-            onValueChange = { studentPassword = it },
+            value = bookHolderPassword,
+            onValueChange = { bookHolderPassword = it },
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedContainerColor = colorResource(id = R.color.evergreen),
-                unfocusedIndicatorColor = Color.White,
-                focusedContainerColor = colorResource(id = R.color.evergreen),
-                focusedIndicatorColor = Color.White
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                unfocusedContainerColor = colorResource(id = R.color.white),
+                unfocusedIndicatorColor = Color.Black,
+                focusedContainerColor = colorResource(id = R.color.white),
+                focusedIndicatorColor = Color.Black
             )
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -212,7 +217,7 @@ fun JoinActivityScreen() {
         Text(
             modifier = Modifier.padding(start = 12.dp),
             text = "Confirm Password",
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(
@@ -225,16 +230,16 @@ fun JoinActivityScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            value = sConfirmPassword,
-            onValueChange = { sConfirmPassword = it },
+            value = bookHolderConfirmPassword,
+            onValueChange = { bookHolderConfirmPassword = it },
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedContainerColor = colorResource(id = R.color.evergreen),
-                unfocusedIndicatorColor = Color.White,
-                focusedContainerColor = colorResource(id = R.color.evergreen),
-                focusedIndicatorColor = Color.White
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                unfocusedContainerColor = colorResource(id = R.color.white),
+                unfocusedIndicatorColor = Color.Black,
+                focusedContainerColor = colorResource(id = R.color.white),
+                focusedIndicatorColor = Color.Black
             )
         )
 
@@ -245,26 +250,26 @@ fun JoinActivityScreen() {
             onClick = {
 
                 when {
-                    studentEmail.isEmpty() -> {
+                    bookHolderEmail.isEmpty() -> {
                             Toast.makeText(context, " Please Enter Mail", Toast.LENGTH_SHORT).show()
                     }
-                    studentFullName.isEmpty() -> {
+                    bookHolderName.isEmpty() -> {
                             Toast.makeText(context, " Please Enter Name", Toast.LENGTH_SHORT).show()
                     }
 
-                    studentArea.isEmpty() -> {
+                    bookHolderArea.isEmpty() -> {
                             Toast.makeText(context, " Please Enter Area", Toast.LENGTH_SHORT).show()
                     }
-                    studentPassword.isEmpty() -> {
+                    bookHolderPassword.isEmpty() -> {
                             Toast.makeText(context, " Please Enter Password", Toast.LENGTH_SHORT).show()
                     }
 
                     else -> {
                         val readerData = ReaderData(
-                            studentFullName,
-                            studentEmail,
-                            studentArea,
-                            studentPassword
+                            bookHolderName,
+                            bookHolderEmail,
+                            bookHolderArea,
+                            bookHolderPassword
                         )
                         readerRegistration(readerData,context);
                     }
@@ -276,9 +281,9 @@ fun JoinActivityScreen() {
                 .align(Alignment.CenterHorizontally)
                 .padding(horizontal = 12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(id = R.color.misty_mint),
+                containerColor = colorResource(id = R.color.bt_color),
                 contentColor = colorResource(
-                    id = R.color.evergreen
+                    id = R.color.black
                 )
             ),
             shape = RoundedCornerShape(12.dp)
@@ -302,14 +307,14 @@ fun JoinActivityScreen() {
                     .weight(1f) // Width of the line
                     .height(2.dp) // Adjust height as needed
                     .padding(horizontal = 6.dp)
-                    .background(Color.White) // Color of the line
+                    .background(Color.Black) // Color of the line
 
             )
 
             Text(
                 text = "or Login",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
+                color = Color.Black,
                 modifier = Modifier.clickable {
                     context.startActivity(Intent(context, SessionActivity::class.java))
                     context.finish()
@@ -321,7 +326,7 @@ fun JoinActivityScreen() {
                     .weight(1f) // Width of the line
                     .height(2.dp) // Adjust height as needed
                     .padding(horizontal = 6.dp)
-                    .background(Color.White) // Color of the line
+                    .background(Color.Black) // Color of the line
 
             )
 
@@ -344,6 +349,8 @@ fun readerRegistration(readerData: ReaderData, context: Context) {
             if (task.isSuccessful) {
                 Toast.makeText(context, "You Registered Successfully", Toast.LENGTH_SHORT)
                     .show()
+
+                context.startActivity(Intent(context, SessionActivity::class.java))
 
             } else {
                 Toast.makeText(

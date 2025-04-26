@@ -12,14 +12,30 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,14 +83,23 @@ fun BookingSharingHomeActivity() {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = colorResource(id = R.color.white)
+                    color = colorResource(id = R.color.bt_color)
                 )
-                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
 
             Image(
                 modifier = Modifier
-                    .size(38.dp),
+                    .size(38.dp)
+                    .clickable {
+                        context.startActivity(
+                            Intent(
+                                context,
+                                BookHolderDataActivity::class.java
+                            )
+                        )
+                    },
                 painter = painterResource(id = R.drawable.profile),
                 contentDescription = "profile"
             )
@@ -90,6 +115,17 @@ fun BookingSharingHomeActivity() {
             Spacer(modifier = Modifier.weight(1f))
             Image(
                 modifier = Modifier
+                    .clickable()
+                    {
+
+                        // Navigate to LoginActivity when clicked
+                        BookSharingData.saveBookHolderStatus(context, false)
+
+                        val intent = Intent(context, SessionActivity::class.java)
+                        context.startActivity(intent)
+
+                        context.finish()
+                    }
                     .size(38.dp),
                 painter = painterResource(id = R.drawable.logout),
                 contentDescription = "logout"
@@ -137,76 +173,160 @@ fun BookingSharingHomeActivity() {
 
         BookListScreen()
 
-//        BookCardItem()
-
     }
 
 }
 
+
 @Composable
-fun BookCardItem() {
+fun BookListScreen() {
+    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
+
+    val context = LocalContext.current as Activity
+    val bookHolderEmail = BookSharingData.getBookHolderMail(context)
+    var booksList by remember { mutableStateOf(listOf<BookData>()) }
+    var booksLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(bookHolderEmail) {
+        getBooks() { orders ->
+            booksList = orders
+            booksLoading = false
+        }
+    }
+
+    val filteredBooks = booksList.filter {
+        val query = searchQuery.text.trim().lowercase()
+        it.bookName.lowercase().contains(query) || it.author.lowercase().contains(query)
+    }
+
+
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .padding(horizontal = 8.dp)
-            .background(
-                color = colorResource(id = R.color.white),
-                shape = RoundedCornerShape(6.dp)
-            )
-            .border(
-                width = 1.dp,
-                color = colorResource(id = R.color.white),
-                shape = RoundedCornerShape(6.dp)
-            )
-            .clickable {
-            }
-            .padding(horizontal = 8.dp, vertical = 12.dp)
-
-
+            .fillMaxSize()
+            .padding(16.dp)
     ) {
-
-        Row()
-        {
-            Image(
-                modifier = Modifier
-                    .size(96.dp),
-                painter = painterResource(id = R.drawable.book_image),
-                contentDescription = "Book Des"
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(
+        if (booksLoading) {
+            LinearProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+        } else {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search by Title or Author") },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(bottom = 16.dp)
             )
 
-            {
+            LazyColumn {
+                items(filteredBooks) { book ->
+                    if (book.isAvailable == "Available")
+                        BookCard(book)
+                }
+            }
+        }
+    }
+}
 
+@Composable
+fun BookCard(book: BookData) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Image(
+                bitmap = decodeBase64ToBitmap(book.bookImage)!!.asImageBitmap(),
+                contentDescription = "Book Image",
+                modifier = Modifier
+                    .width(70.dp)
+                    .height(90.dp)
+                    .padding(end = 8.dp)
+                    .clip(RectangleShape)
+                    .border(1.dp, Color.Black, RectangleShape),
+                contentScale = ContentScale.Crop
+            )
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    modifier = Modifier,
-                    text = "The Da Vinci Code",
-                    style = MaterialTheme.typography.titleMedium.copy(
+                    text = book.bookName,
+                    fontSize = 16.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
+                )
+                Row {
+                    Text(
+                        text = "Author :",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = book.author,
+                        fontSize = 14.sp,
                         color = Color.Black,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Bold
                     )
-                )
+                }
 
-                Text(
-                    modifier = Modifier,
-                    text = "Dan Brown",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = Color.DarkGray,
-                        fontWeight = FontWeight.Bold,
+                Row {
+                    Text(
+                        text = "Language :",
+                        fontSize = 14.sp,
+                        color = Color.Gray
                     )
-                )
+                    Spacer(modifier = Modifier.width(4.dp))
 
-                Spacer(modifier = Modifier.height(32.dp))
+                    Text(
+                        text = book.language,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Row {
+                    Text(
+                        text = "Category :",
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Text(
+                        text = book.genre,
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+
                 Text(
                     modifier = Modifier
+                        .align(alignment = Alignment.End)
                         .clickable {
+                            BookSelected.bookData = book
+
+                            context.startActivity(
+                                Intent(
+                                    context,
+                                    ViewBookActivity::class.java
+                                )
+                            )
                         }
-                        .padding(horizontal = 12.dp)
+                        .padding(horizontal = 4.dp)
                         .background(
                             color = colorResource(id = R.color.bt_color),
                             shape = RoundedCornerShape(
@@ -220,123 +340,15 @@ fun BookCardItem() {
                                 10.dp
                             )
                         )
-                        .padding(vertical = 8.dp, horizontal = 18.dp)
-                        .align(Alignment.End),
+                        .padding(vertical = 6.dp, horizontal = 10.dp),
                     text = "View",
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = colorResource(id = R.color.white),
+                    style = MaterialTheme.typography.titleSmall.copy(
+                        color = colorResource(id = R.color.black),
                     )
                 )
-
-
             }
 
-        }
-    }
-
-}
-
-@Composable
-fun BookListScreen() {
-    var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
-
-    val context = LocalContext.current as Activity
-    val userEmail = BookSharingData.readMail(context)
-    var booksList by remember { mutableStateOf(listOf<BookData>()) }
-    var booksLoading by remember { mutableStateOf(true) }
-
-    LaunchedEffect(userEmail) {
-        getBooks() { orders ->
-            booksList = orders
-            booksLoading = false
-        }
-    }
-
-    val filteredBooks = booksList.filter {
-        val query = searchQuery.text.trim().lowercase()
-        it.bookName.lowercase().contains(query) || it.author.lowercase().contains(query)
-    }
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            label = { Text("Search by Title or Author") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
-
-        LazyColumn {
-            items(filteredBooks) { book ->
-                if (book.isAvailable == "Available")
-                    BookCard(book)
-            }
-        }
-    }
-}
-
-@Composable
-fun BookCard(book: BookData) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Image(
-                bitmap = decodeBase64ToBitmap(book.bookImage)!!.asImageBitmap(),
-                contentDescription = "Book Image",
-                modifier = Modifier
-                    .width(100.dp)
-                    .height(150.dp)
-                    .padding(end = 8.dp)
-                    .clip(RectangleShape)
-                    .border(2.dp, Color.Black, RectangleShape),
-                contentScale = ContentScale.Crop
-            )
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = book.bookName,
-                    fontSize = 16.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(text = "Author: ${book.author}", fontSize = 14.sp, color = Color.Gray)
-                Text(text = "Language: ${book.language}", fontSize = 13.sp, color = Color.Gray)
-            }
-
-            Text(
-                modifier = Modifier
-                    .clickable {
-                    }
-                    .padding(horizontal = 4.dp)
-                    .background(
-                        color = colorResource(id = R.color.bt_color),
-                        shape = RoundedCornerShape(
-                            10.dp
-                        )
-                    )
-                    .border(
-                        width = 2.dp,
-                        color = colorResource(id = R.color.bt_color),
-                        shape = RoundedCornerShape(
-                            10.dp
-                        )
-                    )
-                    .padding(vertical = 4.dp, horizontal = 4.dp),
-                text = "View",
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    color = colorResource(id = R.color.white),
-                )
-            )
         }
     }
 }

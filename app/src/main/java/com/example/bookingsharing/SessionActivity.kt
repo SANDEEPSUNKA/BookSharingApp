@@ -7,8 +7,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -37,8 +35,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.database.FirebaseDatabase
 
 class SessionActivity : ComponentActivity() {
@@ -52,8 +48,8 @@ class SessionActivity : ComponentActivity() {
 
 @Composable
 fun SessionActivityScreen() {
-    var studentEmail by remember { mutableStateOf("") }
-    var studentPassword by remember { mutableStateOf("") }
+    var bookHolderEmail by remember { mutableStateOf("") }
+    var bookHolderPassword by remember { mutableStateOf("") }
 
 
     val context = LocalContext.current as Activity
@@ -61,7 +57,7 @@ fun SessionActivityScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = colorResource(id = R.color.evergreen))
+            .background(color = colorResource(id = R.color.bg))
     ) {
         Spacer(modifier = Modifier.height(94.dp))
 
@@ -69,14 +65,14 @@ fun SessionActivityScreen() {
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Welcome,",
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            color = Color.White
+            color = Color.Black
         )
 
         Text(
             modifier = Modifier.align(Alignment.CenterHorizontally),
             text = "Glad to see you!",
             style = MaterialTheme.typography.titleLarge,
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(modifier = Modifier.height(64.dp))
@@ -84,7 +80,7 @@ fun SessionActivityScreen() {
         Text(
             modifier = Modifier.padding(start = 12.dp),
             text = "Enter Email Address",
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(
@@ -97,16 +93,16 @@ fun SessionActivityScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            value = studentEmail,
-            onValueChange = { studentEmail = it },
+            value = bookHolderEmail,
+            onValueChange = { bookHolderEmail = it },
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedContainerColor = colorResource(id = R.color.evergreen),
-                unfocusedIndicatorColor = Color.White,
-                focusedContainerColor = colorResource(id = R.color.evergreen),
-                focusedIndicatorColor = Color.White
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                unfocusedContainerColor = colorResource(id = R.color.white),
+                unfocusedIndicatorColor = Color.Black,
+                focusedContainerColor = colorResource(id = R.color.white),
+                focusedIndicatorColor = Color.Black
             )
         )
 
@@ -115,7 +111,7 @@ fun SessionActivityScreen() {
         Text(
             modifier = Modifier.padding(start = 12.dp),
             text = "Enter Password",
-            color = Color.White
+            color = Color.Black
         )
 
         Spacer(
@@ -128,16 +124,16 @@ fun SessionActivityScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp),
-            value = studentPassword,
-            onValueChange = { studentPassword = it },
+            value = bookHolderPassword,
+            onValueChange = { bookHolderPassword = it },
             shape = RoundedCornerShape(12.dp),
             colors = TextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                unfocusedContainerColor = colorResource(id = R.color.evergreen),
-                unfocusedIndicatorColor = Color.White,
-                focusedContainerColor = colorResource(id = R.color.evergreen),
-                focusedIndicatorColor = Color.White
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                unfocusedContainerColor = colorResource(id = R.color.white),
+                unfocusedIndicatorColor = Color.Black,
+                focusedContainerColor = colorResource(id = R.color.white),
+                focusedIndicatorColor = Color.Black
             )
         )
 
@@ -146,11 +142,11 @@ fun SessionActivityScreen() {
         Button(
             onClick = {
                 when {
-                    studentEmail.isEmpty() -> {
+                    bookHolderEmail.isEmpty() -> {
                             Toast.makeText(context, " Please Enter Mail", Toast.LENGTH_SHORT).show()
                     }
 
-                    studentPassword.isEmpty() -> {
+                    bookHolderPassword.isEmpty() -> {
                             Toast.makeText(context, " Please Enter Password", Toast.LENGTH_SHORT)
                                 .show()
                     }
@@ -158,9 +154,9 @@ fun SessionActivityScreen() {
                     else -> {
                         val readerData = ReaderData(
                             "",
-                            studentEmail,
+                            bookHolderEmail,
                             "",
-                            studentPassword
+                            bookHolderPassword
                         )
 
                         readerLogin(readerData,context)
@@ -173,9 +169,9 @@ fun SessionActivityScreen() {
                 .align(Alignment.CenterHorizontally)
                 .padding(horizontal = 12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = colorResource(id = R.color.misty_mint),
+                containerColor = colorResource(id = R.color.bt_color),
                 contentColor = colorResource(
-                    id = R.color.evergreen
+                    id = R.color.black
                 )
             ),
             shape = RoundedCornerShape(12.dp)
@@ -199,14 +195,14 @@ fun SessionActivityScreen() {
                     .weight(1f) // Width of the line
                     .height(2.dp) // Adjust height as needed
                     .padding(horizontal = 6.dp)
-                    .background(Color.White) // Color of the line
+                    .background(Color.Black) // Color of the line
 
             )
 
             Text(
                 text = "or Register",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
+                color = Color.Black,
                 modifier = Modifier.clickable {
                     context.startActivity(Intent(context, JoinActivity::class.java))
                     context.finish()
@@ -218,7 +214,7 @@ fun SessionActivityScreen() {
                     .weight(1f) // Width of the line
                     .height(2.dp) // Adjust height as needed
                     .padding(horizontal = 6.dp)
-                    .background(Color.White) // Color of the line
+                    .background(Color.Black) // Color of the line
 
             )
 
@@ -240,9 +236,9 @@ fun readerLogin(readerData: ReaderData, context: Context) {
             if (rData != null) {
                 if (rData.password == readerData.password) {
 
-                    BookSharingData.writeLS(context, true)
-                    BookSharingData.writeMail(context, rData.emailid)
-                    BookSharingData.writeUserName(context, rData.name)
+                    BookSharingData.saveBookHolderStatus(context, true)
+                    BookSharingData.saveBookHolderMail(context, rData.emailid)
+                    BookSharingData.saveBookHolderName(context, rData.name)
 
                     Toast.makeText(context, "Login Sucessfully", Toast.LENGTH_SHORT).show()
 

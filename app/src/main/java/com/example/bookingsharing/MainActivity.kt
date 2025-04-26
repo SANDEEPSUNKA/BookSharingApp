@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -47,6 +48,10 @@ class MainActivity : ComponentActivity() {
 
     private fun checkStudentStatus(studentStatus: Int) {
         if (studentStatus == 2) {
+            startActivity(Intent(this, BookingSharingHome::class.java))
+            finish()
+        }
+        if (studentStatus == 1) {
             startActivity(Intent(this, SessionActivity::class.java))
             finish()
         }
@@ -61,17 +66,16 @@ fun OnBoardingScreen(onLoginClick: (studentStatus: Int) -> Unit) {
     SideEffect {
         CoroutineScope(Dispatchers.Main).launch {
             delay(3000)
-            onLoginClick.invoke(2)
 
-            val currentStatus = BookSharingData.readLS(context)
+            val currentStatus = BookSharingData.getBookHolderStatus(context)
 
             if(currentStatus)
             {
-                context.startActivity(Intent(context, BookingSharingHome::class.java))
-                context.finish()
+                onLoginClick.invoke(2)
+
             }else{
-                context.startActivity(Intent(context, SessionActivity::class.java))
-                context.finish()
+                onLoginClick.invoke(1)
+
             }
         }
     }
@@ -85,7 +89,7 @@ fun SplashScrOnBoardingScreenD() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = colorResource(id = R.color.evergreen)),
+            .background(color = colorResource(id = R.color.bt_color)),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -98,13 +102,15 @@ fun SplashScrOnBoardingScreenD() {
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 text = "Sandeep Sunka",
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
+                color = Color.Black
             )
 
 
             Card(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             )
             {
 
@@ -114,6 +120,8 @@ fun SplashScrOnBoardingScreenD() {
                         .background(color = Color.Transparent),
                 )
                 {
+                    Spacer(modifier = Modifier.height(6.dp))
+
                     Image(
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         painter = painterResource(id = R.drawable.book_sharing),
@@ -136,7 +144,7 @@ fun SplashScrOnBoardingScreenD() {
                     Text(
                         text = "Top Books",
                         fontWeight = FontWeight.Bold,
-                        color = colorResource(id = R.color.evergreen), // Green color similar to the design
+                        color = colorResource(id = R.color.black), // Green color similar to the design
                         fontSize = 26.sp,
                         style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -147,7 +155,7 @@ fun SplashScrOnBoardingScreenD() {
                     Text(
                         text = "Interesting Books",
                         fontWeight = FontWeight.Bold,
-                        color = colorResource(id = R.color.evergreen), // Green color similar to the design
+                        color = colorResource(id = R.color.black), // Green color similar to the design
                         fontSize = 26.sp,
                         style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -158,7 +166,7 @@ fun SplashScrOnBoardingScreenD() {
                     Text(
                         text = "Informative Books",
                         fontWeight = FontWeight.Bold,
-                        color = colorResource(id = R.color.evergreen), // Green color similar to the design
+                        color = colorResource(id = R.color.black), // Green color similar to the design
                         fontSize = 26.sp,
                         style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
