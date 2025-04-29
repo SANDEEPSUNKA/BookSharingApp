@@ -1,4 +1,4 @@
-package com.example.bookingsharing
+package sunkasandeep.booksharing.s3430207
 
 import org.junit.Test
 

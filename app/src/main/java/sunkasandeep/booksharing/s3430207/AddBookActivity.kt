@@ -1,14 +1,14 @@
-package com.example.bookingsharing
+package sunkasandeep.booksharing.s3430207
 
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
-import android.util.Base64
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,16 +22,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -40,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -60,7 +66,7 @@ import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.database.FirebaseDatabase
-import java.io.ByteArrayOutputStream
+import com.google.firebase.storage.FirebaseStorage
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -83,7 +89,7 @@ fun AddBook() {
     var bookCategory by remember { mutableStateOf("") }
     var bookLanguage by remember { mutableStateOf("") }
     var bookPublisher by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+//    var location by remember { mutableStateOf("") }
 
     var ownerName by remember { mutableStateOf("") }
     var ownerContact by remember { mutableStateOf("") }
@@ -92,8 +98,34 @@ fun AddBook() {
 
     var isAvailable by remember { mutableStateOf<String?>(null) }
 
-    val context = LocalContext.current
+    val context = LocalContext.current as Activity
 
+    var locationText by remember { mutableStateOf("Select PickUp Location...") }
+
+    var locLat by remember { mutableDoubleStateOf(0.0) }
+    var locLng by remember { mutableDoubleStateOf(0.0) }
+
+
+    var isPuckUpSelected by remember { mutableStateOf(false) }
+
+    var isUploading by remember { mutableStateOf(false) }
+
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data = result.data
+            val lat = data?.getDoubleExtra("LAT", 0.0) ?: 0.0
+            val lng = data?.getDoubleExtra("LNG", 0.0) ?: 0.0
+            locLat = lat
+            locLng = lng
+
+            Log.e("Test","Location : ${locLat},${locLng}")
+            locationText = "Lat: $lat, Lng: $lng"
+            isPuckUpSelected = true
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -101,14 +133,15 @@ fun AddBook() {
             .background(
                 color = colorResource(id = R.color.bg)
             )
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .padding(WindowInsets.systemBars.asPaddingValues()),
     ) {
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = colorResource(id = R.color.white)
+                    color = colorResource(id = R.color.bt_color)
                 )
                 .padding(horizontal = 12.dp),
 
@@ -117,6 +150,10 @@ fun AddBook() {
             ) {
 
             Icon(
+                modifier = Modifier
+                    .clickable {
+                        context.finish()
+                    },
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Select Contact",
                 tint = Color.Black
@@ -135,7 +172,7 @@ fun AddBook() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        UploadDonorImage()
+        UploadBookImage()
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -243,25 +280,67 @@ fun AddBook() {
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        OutlinedTextField(
+
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = colorResource(R.color.white),
-                focusedContainerColor = colorResource(R.color.white),
-                unfocusedTextColor = Color.Black,
-                focusedTextColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                unfocusedLabelColor = Color.Black
-            ),
-            value = location,
-            onValueChange = { location = it },
-            label = { Text("Location") },
-            textStyle = TextStyle(color = colorResource(id = R.color.black)),
+                .padding(horizontal = 12.dp)
+                .background(
+                    color = Color.LightGray,
+                    shape = RoundedCornerShape(
+                        3.dp
+                    )
+                )
+                .border(
+                    width = 1.dp,
+                    color = Color.Gray,
+                    shape = RoundedCornerShape(3.dp)
+                )
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        )
+        {
+            if (isPuckUpSelected) {
+                val address = getAddressFromLatLng(context, LatLng(locLat, locLng))
+                Text(modifier = Modifier.weight(1f), text = address, maxLines = 2)
+            } else {
+                Text(text = locationText)
+            }
 
+            Spacer(modifier = Modifier.weight(1f))
+
+            Text(
+                text = "Select",
+                color = Color.White,
+                modifier = Modifier
+                    .wrapContentHeight()
+                    .clickable {
+//                        context.startActivity(Intent(context, PickupLocationActivity::class.java))
+
+                        isPuckUpSelected = false
+                        val intent = Intent(context, PickupLocationActivity::class.java)
+                        launcher.launch(intent)
+                    }
+                    .background(
+                        color = colorResource(id = R.color.black),
+                        shape = RoundedCornerShape(
+                            6.dp
+                        )
+                    )
+                    .border(
+                        width = 1.dp,
+                        color = colorResource(id = R.color.black),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+                    .padding(
+                        horizontal = 12.dp,
+                        vertical = 4.dp
+                    )
             )
+        }
+
         Spacer(modifier = Modifier.height(6.dp))
+
 
 
         OutlinedTextField(
@@ -381,168 +460,71 @@ fun AddBook() {
             }
         }
 
-//        AddBook2()
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        Text(
-            modifier = Modifier
-                .clickable {
-                    if (bookTitle.isEmpty()) {
-                        Toast
-                            .makeText(context, "Enter all fields", Toast.LENGTH_SHORT)
-                            .show()
-                    } else {
+        if (!isUploading) {
+            Text(
+                modifier = Modifier
+                    .clickable {
+                        if (bookTitle.isEmpty()) {
+                            Toast
+                                .makeText(context, "Enter all fields", Toast.LENGTH_SHORT)
+                                .show()
+                        } else {
 
-                        val bookData = BookData(
-                            bookName = bookTitle,
-                            author = bookAuthors,
-                            genre = bookCategory,
-                            language = bookLanguage,
-                            publisher = bookPublisher,
-                            lat = "908.78",
-                            lng = "673.38",
-                            condition = selectedOption!!,
-                            isAvailable = isAvailable!!,
-                            ownerName = ownerName,
-                            ownerContact = ownerContact
+                            val bookData = BookData(
+                                bookName = bookTitle,
+                                author = bookAuthors,
+                                genre = bookCategory,
+                                language = bookLanguage,
+                                publisher = bookPublisher,
+                                lat = locLat.toString(),
+                                lng = locLng.toString(),
+                                condition = selectedOption!!,
+                                available = isAvailable!!,
+                                ownerName = ownerName,
+                                ownerContact = ownerContact
 
-                        )
-
-                        val inputStream =
-                            context.contentResolver.openInputStream(DonorPhoto.selImageUri)
-                        val bitmap = BitmapFactory.decodeStream(inputStream)
-                        val outputStream = ByteArrayOutputStream()
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-                        val base64Image =
-                            Base64.encodeToString(
-                                outputStream.toByteArray(),
-                                Base64.DEFAULT
                             )
+                            isUploading = true
+                            uploadBookData(bookData, BookImage.selImageUri, context)
 
-                        bookData.bookImage = base64Image
-
-                        uploadBookData(bookData, context)
-
+                        }
                     }
-                }
-                .width(200.dp)
-                .padding(horizontal = 12.dp)
-                .background(
-                    color = colorResource(id = R.color.bt_color),
-                    shape = RoundedCornerShape(
-                        10.dp
+                    .width(200.dp)
+                    .padding(horizontal = 12.dp)
+                    .background(
+                        color = colorResource(id = R.color.bt_color),
+                        shape = RoundedCornerShape(
+                            10.dp
+                        )
                     )
-                )
-                .border(
-                    width = 2.dp,
-                    color = colorResource(id = R.color.bt_color),
-                    shape = RoundedCornerShape(
-                        10.dp
+                    .border(
+                        width = 2.dp,
+                        color = colorResource(id = R.color.bt_color),
+                        shape = RoundedCornerShape(
+                            10.dp
+                        )
                     )
+                    .padding(vertical = 12.dp, horizontal = 12.dp)
+                    .align(Alignment.CenterHorizontally),
+                text = "Submit",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    color = colorResource(id = R.color.black),
                 )
-                .padding(vertical = 12.dp, horizontal = 12.dp)
-                .align(Alignment.CenterHorizontally),
-            text = "Submit",
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleMedium.copy(
-                color = colorResource(id = R.color.white),
             )
-        )
-
-
-    }
-}
-
-
-@Composable
-fun AddBook1() {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Condition Selector?",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "New",
-                    onClick = { selectedOption = "New" }
-                )
-                Text("New", modifier = Modifier.clickable { selectedOption = "New" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "LikeNew",
-                    onClick = { selectedOption = "LikeNew" }
-                )
-                Text("LikeNew", modifier = Modifier.clickable { selectedOption = "LikeNew" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Good",
-                    onClick = { selectedOption = "Good" }
-                )
-                Text("Good", modifier = Modifier.clickable { selectedOption = "Good" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Worn",
-                    onClick = { selectedOption = "Worn" }
-                )
-                Text("Worn", modifier = Modifier.clickable { selectedOption = "Worn" })
-            }
+        } else {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+
     }
 }
 
-
-@Composable
-fun AddBook2() {
-    var selectedOption by remember { mutableStateOf<String?>(null) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Availability? ",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        Row {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Available",
-                    onClick = { selectedOption = "Available" }
-                )
-                Text("Available", modifier = Modifier.clickable { selectedOption = "Available" })
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                RadioButton(
-                    selected = selectedOption == "Not Available",
-                    onClick = { selectedOption = "Not Available" }
-                )
-                Text(
-                    "Not Available",
-                    modifier = Modifier.clickable { selectedOption = "Not Available" })
-            }
-        }
-    }
-}
 
 data class BookData(
     var bookName: String = "",
@@ -551,9 +533,9 @@ data class BookData(
     var language: String = "",
     var publisher: String = "",
     var lat: String = "",
-    var lng:String = "",
+    var lng: String = "",
     var condition: String = "",
-    var isAvailable: String = "",
+    var available: String = "",
     var bookId: String = "",
     var ownerName: String = "",
     var ownerContact: String = "",
@@ -561,36 +543,79 @@ data class BookData(
 )
 
 
-private fun uploadBookData(bookData: BookData, activityContext: Context) {
+private fun uploadBookData(bookData: BookData, imageUri: Uri?, activityContext: Context) {
+    if (imageUri == null) {
+        Toast.makeText(activityContext, "Please select a book image", Toast.LENGTH_SHORT).show()
+        return
+    }
 
-    val userEmail = BookSharingData.readMail(activityContext)
+    val bookHolderEmail = BookSharingData.getBookHolderMail(activityContext)
     val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
-    val orderId = dateFormat.format(Date())
-    bookData.bookId = orderId
+    val bookId = dateFormat.format(Date())
+    bookData.bookId = bookId
 
-    FirebaseDatabase.getInstance().getReference("SharedBooks")
-        .child(userEmail.replace(".", ",")).child(orderId).setValue(bookData)
-        .addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                Toast.makeText(activityContext, "Donor Registered Successfully", Toast.LENGTH_SHORT)
-                    .show()
-                (activityContext as Activity).finish()
-            } else {
+    // Storage reference
+    val storageRef = FirebaseStorage.getInstance().reference
+        .child("BookImages/${bookHolderEmail.replace(".", ",")}/$bookId.jpg")
+
+    // Upload image
+    storageRef.putFile(imageUri)
+        .addOnSuccessListener { taskSnapshot ->
+            // Image uploaded successfully, get download URL
+            storageRef.downloadUrl.addOnSuccessListener { uri ->
+                val downloadUrl = uri.toString()
+
+                // Now set the bookImage field to downloadUrl
+                bookData.bookImage = downloadUrl
+
+                // Save book data to database
+                FirebaseDatabase.getInstance().getReference("SharedBooks")
+                    .child(bookHolderEmail.replace(".", ","))
+                    .child(bookId)
+                    .setValue(bookData)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Toast.makeText(
+                                activityContext,
+                                "Book Added Successfully",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            (activityContext as Activity).finish()
+                        } else {
+                            Toast.makeText(
+                                activityContext,
+                                "Failed: ${task.exception?.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        Toast.makeText(
+                            activityContext,
+                            "Failed: ${exception.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+            }.addOnFailureListener { exception ->
                 Toast.makeText(
                     activityContext,
-                    "Donor Registration Failed: ${task.exception?.message}",
+                    "Failed to get image URL: ${exception.message}",
                     Toast.LENGTH_SHORT
                 ).show()
             }
+
         }
         .addOnFailureListener { exception ->
             Toast.makeText(
                 activityContext,
-                "Donor Registration Failed: ${exception.message}",
+                "Image Upload Failed: ${exception.message}",
                 Toast.LENGTH_SHORT
             ).show()
         }
 }
+
+
 
 
 @Preview(showBackground = true)
@@ -600,7 +625,7 @@ fun AddBookPreview() {
 }
 
 @Composable
-fun UploadDonorImage() {
+fun UploadBookImage() {
     val activityContext = LocalContext.current
 
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -610,10 +635,10 @@ fun UploadDonorImage() {
         onResult = { success ->
             if (success) {
                 imageUri = getImageUri(activityContext)
-                DonorPhoto.selImageUri = imageUri as Uri
-                DonorPhoto.isImageSelected = true
+                BookImage.selImageUri = imageUri as Uri
+                BookImage.isImageSelected = true
             } else {
-                DonorPhoto.isImageSelected = false
+                BookImage.isImageSelected = false
                 Toast.makeText(activityContext, "Capture Failed", Toast.LENGTH_SHORT).show()
             }
         }
@@ -640,7 +665,7 @@ fun UploadDonorImage() {
             painter = if (imageUri != null) {
                 rememberAsyncImagePainter(model = imageUri)
             } else {
-                painterResource(id = R.drawable.ic_add_image)
+                painterResource(id = R.drawable.add_book_img)
             },
             contentDescription = "Captured Image",
             modifier = Modifier
@@ -660,7 +685,7 @@ fun UploadDonorImage() {
         )
         Spacer(modifier = Modifier.height(16.dp))
         if (imageUri == null) {
-            Text(text = "Tap the image to capture")
+            Text(text = "Capture Book Image")
         }
     }
 }
@@ -674,8 +699,17 @@ fun getImageUri(activityContext: Context): Uri {
     )
 }
 
+fun getAddressFromLatLng(context: Context, latLng: LatLng): String {
+    return try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+        addresses?.get(0)?.getAddressLine(0) ?: "Unknown Location"
+    } catch (e: Exception) {
+        "Unknown Location"
+    }
+}
 
-object DonorPhoto {
+object BookImage {
     lateinit var selImageUri: Uri
     var isImageSelected = false
 }

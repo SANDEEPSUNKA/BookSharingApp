@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.bookingsharing"
+    namespace = "sunkasandeep.booksharing.s3430207"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.bookingsharing"
+        applicationId = "sunkasandeep.booksharing.s3430207"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
+    implementation(libs.firebase.storage.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

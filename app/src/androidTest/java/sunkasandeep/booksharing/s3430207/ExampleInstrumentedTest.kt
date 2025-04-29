@@ -1,4 +1,4 @@
-package com.example.bookingsharing
+package sunkasandeep.booksharing.s3430207
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

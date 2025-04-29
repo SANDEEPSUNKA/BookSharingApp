@@ -1,4 +1,4 @@
-package com.example.bookingsharing.ui.theme
+package sunkasandeep.booksharing.s3430207.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

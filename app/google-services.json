@@ -1,15 +1,16 @@
 {
   "project_info": {
     "project_number": "702950974622",
+    "firebase_url": "https://booksharingapp-44615-default-rtdb.firebaseio.com",
     "project_id": "booksharingapp-44615",
     "storage_bucket": "booksharingapp-44615.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:702950974622:android:7dec3e2ee7309797abc78f",
+        "mobilesdk_app_id": "1:702950974622:android:05c4e1ef285d0e76abc78f",
         "android_client_info": {
-          "package_name": "com.example.bookingsharing"
+          "package_name": "sunkasandeep.booksharing.s3430207"
         }
       },
       "oauth_client": [],
